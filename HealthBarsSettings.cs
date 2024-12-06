@@ -1,9 +1,9 @@
-using ExileCore.Shared.Attributes;
-using ExileCore.Shared.Interfaces;
-using ExileCore.Shared.Nodes;
+using System.Drawing;
+using System.Numerics;
+using ExileCore2.Shared.Attributes;
+using ExileCore2.Shared.Interfaces;
+using ExileCore2.Shared.Nodes;
 using Newtonsoft.Json;
-using SharpDX;
-using Vector2 = System.Numerics.Vector2;
 
 namespace HealthBars;
 

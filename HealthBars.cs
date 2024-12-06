@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using ExileCore;
-using ExileCore.PoEMemory.Components;
-using ExileCore.PoEMemory.MemoryObjects;
-using ExileCore.Shared.Cache;
-using ExileCore.Shared.Enums;
-using ExileCore.Shared.Helpers;
+using ExileCore2;
+using ExileCore2.PoEMemory.Components;
+using ExileCore2.PoEMemory.MemoryObjects;
+using ExileCore2.Shared.Cache;
+using ExileCore2.Shared.Enums;
+using ExileCore2.Shared.Helpers;
 using ImGuiNET;
 using Newtonsoft.Json;
-using SharpDX;
+using RectangleF = ExileCore2.Shared.RectangleF;
 using Vector2 = System.Numerics.Vector2;
 
 namespace HealthBars;
@@ -28,8 +29,8 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
 
     private Camera Camera => GameController.IngameState.Camera;
     private IngameUIElements IngameUi => GameController.IngameState.IngameUi;
-    private Size2F WindowRelativeSize => new Size2F(_windowRectangle.Value.Width / 2560, _windowRectangle.Value.Height / 1600);
-    private string HealthbarTexture => Settings.UseShadedTexture ? ShadedHealthbarTexture : FlatHealthbarTexture;
+    private Vector2 WindowRelativeSize => new Vector2(_windowRectangle.Value.Width / 2560, _windowRectangle.Value.Height / 1600);
+    private string HealthbarTexture => TexturePrefix + (Settings.UseShadedTexture ? ShadedHealthbarTexture : FlatHealthbarTexture);
 
     private readonly ConcurrentDictionary<string, EntityTreatmentRule> _pathRuleCache = new();
     private bool _canTick = true;
@@ -37,19 +38,19 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
     private Vector2 _oldPlayerCoord;
     private HealthBar _playerBar;
     private CachedValue<bool> _ingameUiCheckVisible;
-    private CachedValue<RectangleF> _windowRectangle;
+    private CachedValue<ExileCore2.Shared.RectangleF> _windowRectangle;
 
     public override void OnLoad()
     {
         CanUseMultiThreading = true;
-        Graphics.InitImage(HealthbarTexture);
-        Graphics.InitImage(FlatHealthbarTexture);
+        Graphics.InitImage(TexturePrefix + ShadedHealthbarTexture, Path.Combine(DirectoryFullName, ShadedHealthbarTexture));
+        Graphics.InitImage(TexturePrefix + FlatHealthbarTexture, Path.Combine(DirectoryFullName, FlatHealthbarTexture));
     }
 
     public override bool Initialise()
     {
-        _windowRectangle = new TimeCache<RectangleF>(() =>
-            GameController.Window.GetWindowRectangleReal() with { Location = SharpDX.Vector2.Zero }, 250);
+        _windowRectangle = new TimeCache<ExileCore2.Shared.RectangleF>(() =>
+            GameController.Window.GetWindowRectangleReal() with { Location = Vector2.Zero }, 250);
         _ingameUiCheckVisible = new TimeCache<bool>(() =>
             IngameUi.FullscreenPanels.Any(x => x.IsVisibleLocal) ||
             IngameUi.LargePanels.Any(x => x.IsVisibleLocal), 250);
@@ -158,10 +159,10 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
 
         healthBar.CheckUpdate();
 
-        var worldCoords = healthBar.Entity.PosNum;
+        var worldCoords = healthBar.Entity.Pos;
         if (!Settings.PlaceBarRelativeToGroundLevel)
         {
-            if (healthBar.Entity.GetComponent<Render>()?.BoundsNum is { } boundsNum)
+            if (healthBar.Entity.GetComponent<Render>()?.Bounds is { } boundsNum)
             {
                 worldCoords.Z -= 2 * boundsNum.Z;
             }
@@ -172,10 +173,10 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         if (mobScreenCoords == Vector2.Zero) return;
         mobScreenCoords = Vector2.Lerp(mobScreenCoords, healthBar.LastPosition, healthBar.LastPosition == Vector2.Zero ? 0 : Math.Clamp(Settings.SmoothingFactor, 0, 1));
         healthBar.LastPosition = mobScreenCoords;
-        var scaledWidth = healthBar.Settings.Width * WindowRelativeSize.Width;
-        var scaledHeight = healthBar.Settings.Height * WindowRelativeSize.Height;
+        var scaledWidth = healthBar.Settings.Width * WindowRelativeSize.X;
+        var scaledHeight = healthBar.Settings.Height * WindowRelativeSize.Y;
 
-        healthBar.DisplayArea = new RectangleF(mobScreenCoords.X - scaledWidth / 2f, mobScreenCoords.Y - scaledHeight / 2f, scaledWidth,
+        healthBar.DisplayArea = new ExileCore2.Shared.RectangleF(mobScreenCoords.X - scaledWidth / 2f, mobScreenCoords.Y - scaledHeight / 2f, scaledWidth,
             scaledHeight);
 
         if (healthBar.Distance > 80 && !_windowRectangle.Value.Intersects(healthBar.DisplayArea))
@@ -184,7 +185,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         }
     }
 
-    public override Job Tick()
+    public override void Tick()
     {
         _canTick = true;
 
@@ -194,17 +195,10 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
             !Settings.ShowInHideout && GameController.Area.CurrentArea.IsHideout)
         {
             _canTick = false;
-            return null;
-        }
-
-        if (Settings.MultiThreading && GameController.EntityListWrapper.ValidEntitiesByType[EntityType.Monster].Count >=
-            Settings.MinimumEntitiesForMultithreading)
-        {
-            return new Job(nameof(HealthBars), TickLogic);
+            return;
         }
 
         TickLogic();
-        return null;
     }
 
     private void TickLogic()
@@ -235,10 +229,10 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
             return;
         }
 
-        var worldCoords = playerBar.Entity.PosNum;
+        var worldCoords = playerBar.Entity.Pos;
         if (!Settings.PlacePlayerBarRelativeToGroundLevel)
         {
-            if (playerBar.Entity.GetComponent<Render>()?.BoundsNum is { } boundsNum)
+            if (playerBar.Entity.GetComponent<Render>()?.Bounds is { } boundsNum)
             {
                 worldCoords.Z -= 2 * boundsNum.Z;
             }
@@ -271,10 +265,10 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
             }
         }
 
-        var scaledWidth = playerBar.Settings.Width * WindowRelativeSize.Width;
-        var scaledHeight = playerBar.Settings.Height * WindowRelativeSize.Height;
+        var scaledWidth = playerBar.Settings.Width * WindowRelativeSize.X;
+        var scaledHeight = playerBar.Settings.Height * WindowRelativeSize.Y;
 
-        var background = new RectangleF(result.X, result.Y, 0, 0);
+        var background = new ExileCore2.Shared.RectangleF(result.X, result.Y, 0, 0);
         background.Inflate(scaledWidth / 2f, scaledHeight / 2f);
         playerBar.DisplayArea = background;
     }
@@ -434,7 +428,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
     {
         // ReSharper disable once CompareOfFloatsByEqualityOperator
         var alphaMulti = bar.Settings.HoverOpacity != 1
-                         && ImGui.IsMouseHoveringRect(barArea.TopLeft.ToVector2Num(), barArea.BottomRight.ToVector2Num(), false)
+                         && ImGui.IsMouseHoveringRect(barArea.TopLeft, barArea.BottomRight, false)
             ? bar.Settings.HoverOpacity
             : 1f;
         return alphaMulti;
@@ -472,7 +466,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         if (text != null)
         {
             var textArea = Graphics.MeasureText(text);
-            var barCenter = area.Center.ToVector2Num();
+            var barCenter = area.Center;
             var textOffset = bar.Settings.TextPosition.Value.Mult(area.Width + textArea.X, area.Height + textArea.Y) / 2;
             var textCenter = barCenter + textOffset;
             var textTopLeft = textCenter - textArea / 2;
@@ -522,7 +516,9 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         "wave",
     };
 
-    private void DrawCastBar(HealthBar bar, RectangleF area, bool drawStageNames, bool showNextStageName, int maxSkillNameLength)
+    private static readonly string TexturePrefix = "hb_";
+
+    private void DrawCastBar(HealthBar bar, ExileCore2.Shared.RectangleF area, bool drawStageNames, bool showNextStageName, int maxSkillNameLength)
     {
         if (!bar.Entity.TryGetComponent<Actor>(out var actor))
         {
@@ -553,7 +549,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         var width = area.Width;
         var height = area.Height;
         var maxProgress = ac.TransformProgress(maxRawProgress);
-        var topLeft = area.TopLeft.ToVector2Num();
+        var topLeft = area.TopLeft;
         var bottomRight = topLeft + new Vector2(width, height);
         Graphics.DrawBox(topLeft, bottomRight, settings.BackgroundColor.MultiplyAlpha(alphaMulti));
         Graphics.DrawBox(topLeft, topLeft + new Vector2(width * ac.TransformedRawAnimationProgress / maxProgress, height), settings.FillColor.MultiplyAlpha(alphaMulti));

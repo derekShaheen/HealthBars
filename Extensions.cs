@@ -1,8 +1,9 @@
 using System;
-using ExileCore;
-using ExileCore.PoEMemory.Components;
-using ExileCore.Shared.Nodes;
-using SharpDX;
+using System.Drawing;
+using ExileCore2;
+using ExileCore2.PoEMemory.Components;
+using ExileCore2.Shared.Helpers;
+using ExileCore2.Shared.Nodes;
 
 namespace HealthBars;
 
@@ -10,7 +11,7 @@ public static class Extensions
 {
     public static Color FromHex(uint hex)
     {
-        return Color.FromAbgr((hex << 8) + 0xff);
+        return ConvertHelper.FromAbgr((hex << 8) + 0xff);
     }
 
     public static string FormatHp(this long hp)
@@ -60,12 +61,12 @@ public static class Extensions
 
     public static Color MultiplyAlpha(this Color color, float alphaMultiplier)
     {
-        return color with { A = (byte)(color.A * alphaMultiplier) };
+        return Color.FromArgb((byte)(color.A * alphaMultiplier), color);
     }
 
     public static Color MultiplyAlpha(this ColorNode color, float alphaMultiplier)
     {
-        return color.Value with { A = (byte)(color.Value.A * alphaMultiplier) };
+        return Color.FromArgb((byte)(color.Value.A * alphaMultiplier), color);
     }
 
     public static string Truncate(this string text, int maxLength)
