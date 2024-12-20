@@ -377,25 +377,35 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         }
 
         Graphics.DrawImage(HealthbarTexture, barArea, bar.Settings.BackgroundColor.MultiplyAlpha(alphaMulti));
-        if (!Settings.CombineLifeAndEs)
+        var barSources = new List<(float Current, float Max, Color Color)>();
+        barSources.Add((bar.Life.CurHP, bar.Life.MaxHP, bar.Color));
+        if (bar.Settings.CombineLifeAndEs)
         {
-            var hpWidth = barArea.Width * bar.HpPercent;
-            var esWidth = barArea.Width * bar.EsPercent;
-            Graphics.DrawImage(HealthbarTexture, barArea with { Width = hpWidth }, bar.Color.MultiplyAlpha(alphaMulti));
-            Graphics.DrawImage(HealthbarTexture, new RectangleF(barArea.X, barArea.Y, esWidth, barArea.Height * Settings.EsBarHeight),
-                bar.Settings.EsColor.MultiplyAlpha(alphaMulti));
+            barSources.Add((bar.Life.CurES, bar.Life.MaxES, bar.Settings.EsColor));
         }
-        else
+
+        if (bar.Settings.CombineLifeAndMana)
         {
-            var totalLifePool = (float)(bar.Life.MaxHP + bar.Life.MaxES);
-            var fullHpWidthFraction = bar.Life.MaxHP / totalLifePool;
-            var fullEsWidthFraction = bar.Life.MaxES / totalLifePool;
-            var hpWidthFraction = fullHpWidthFraction * bar.HpPercent;
-            var esWidthFraction = fullEsWidthFraction * bar.EsPercent;
-            var hpWidth = hpWidthFraction * barArea.Width;
-            var esWidth = esWidthFraction * barArea.Width;
-            Graphics.DrawImage(HealthbarTexture, barArea with { Width = hpWidth }, bar.Color.MultiplyAlpha(alphaMulti));
-            Graphics.DrawImage(HealthbarTexture, new RectangleF(barArea.X + hpWidth, barArea.Y, esWidth, barArea.Height), bar.Settings.EsColor.MultiplyAlpha(alphaMulti));
+            barSources.Add((bar.Life.CurMana, bar.Life.MaxMana, bar.Settings.ManaColor));
+        }
+
+        var totalPool = barSources.Sum(x => x.Max);
+        var currentLeft = barArea.Left;
+        foreach (var barSource in barSources)
+        {
+            if (barSource.Current > 0)
+            {
+                var width = barArea.Width * barSource.Current / totalPool;
+                Graphics.DrawImage(HealthbarTexture, barArea with { Left = currentLeft, Width = width }, barSource.Color.MultiplyAlpha(alphaMulti));
+                currentLeft += width;
+            }
+        }
+
+        if (!bar.Settings.CombineLifeAndEs)
+        {
+            var esWidth = barArea.Width * bar.EsPercent;
+            Graphics.DrawImage(HealthbarTexture, new RectangleF(barArea.X, barArea.Y, esWidth, barArea.Height * bar.Settings.EsBarHeight),
+                bar.Settings.EsColor.MultiplyAlpha(alphaMulti));
         }
 
         var segmentCount = bar.Settings.HealthSegments.Value;

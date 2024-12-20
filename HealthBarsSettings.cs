@@ -37,17 +37,10 @@ public class HealthBarsSettings : ISettings
     public ToggleNode PlacePlayerBarRelativeToGroundLevel { get; set; } = new(false);
 
     public RangeNode<int> DrawDistanceLimit { get; set; } = new(133, 0, 1000);
-    public ToggleNode MultiThreading { get; set; } = new(false);
-    public RangeNode<int> MinimumEntitiesForMultithreading { get; set; } = new(10, 1, 200);
     public RangeNode<int> ShowMinionOnlyWhenBelowHp { get; set; } = new(50, 1, 100);
     public RangeNode<int> DpsEstimateDuration { get; set; } = new(2000, 500, 10000);
     public RangeNode<int> CullPercent { get; set; } = new(10, 0, 100);
 
-    [Menu(null, "Combines Life and ES into a single bar that's filled proportionally to the total EHP")]
-    public ToggleNode CombineLifeAndEs { get; set; } = new(true);
-
-    [ConditionalDisplay(nameof(CombineLifeAndEs), false)]
-    public RangeNode<float> EsBarHeight { get; set; } = new(1 / 3f, 0, 1);
 
     public ColorNode CombatDamageColor { get; set; } = Color.Red;
     public ColorNode CombatHealColor { get; set; } = Color.Green;
@@ -137,6 +130,7 @@ public class UnitSettings
     public RangeNode<float> HealthSegmentHeight { get; set; } = new(0.5f, 0, 1);
     public ColorNode LifeColor { get; set; } = Color.White;
     public ColorNode EsColor { get; set; } = Color.Aqua;
+    public ColorNode ManaColor { get; set; } = Color.Blue;
     public ColorNode CullableColor { get; set; } = Color.White;
     public ColorNode BackgroundColor { get; set; } = Color.Black;
     public ColorNode OutlineColor { get; set; } = Color.Transparent;
@@ -146,6 +140,13 @@ public class UnitSettings
     public RangeNode<Vector2> TextPosition { get; set; } = new(new Vector2(0, -1), new Vector2(-1, -1), new Vector2(1, 1));
     public ToggleNode ShowDps { get; set; } = new(true);
     public RangeNode<float> HoverOpacity { get; set; } = new(1, 0, 1);
+    [Menu(null, "Combines Life and ES into a single bar that's filled proportionally to the total EHP")]
+    public ToggleNode CombineLifeAndEs { get; set; } = new(true);
+    [Menu(null, "Combines Life and Mana into a single bar that's filled proportionally to the total EHP")]
+    public ToggleNode CombineLifeAndMana { get; set; } = new(false);
+    [ConditionalDisplay(nameof(CombineLifeAndEs), false)]
+    public RangeNode<float> EsBarHeight { get; set; } = new(1 / 3f, 0, 1);
+
     public ToggleNode IncludeInBossOverlay { get; set; } = new(false);
 
     [Menu(null,
