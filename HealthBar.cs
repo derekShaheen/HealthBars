@@ -79,10 +79,7 @@ public class HealthBar
                 return Color.LightGray;
 
             if (ShouldDrawCullingStrikeIndicator())
-                return Color.Red;
-
-            //if (HpPercent * 100 <= AllSettings.CullPercent)
-            //    return Settings.CullableColor;
+                return Settings.CullableColor;
 
             return Settings.LifeColor;
         }
