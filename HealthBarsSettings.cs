@@ -39,8 +39,9 @@ public class HealthBarsSettings : ISettings
     public RangeNode<int> DrawDistanceLimit { get; set; } = new(133, 0, 1000);
     public RangeNode<int> ShowMinionOnlyWhenBelowHp { get; set; } = new(50, 1, 100);
     public RangeNode<int> DpsEstimateDuration { get; set; } = new(2000, 500, 10000);
-    public RangeNode<int> CullPercent { get; set; } = new(10, 0, 100);
+    //public RangeNode<int> CullPercent { get; set; } = new(10, 0, 100);
 
+    public ToggleNode HasCullingStrike { get; set; } = new(false);
 
     public ColorNode CombatDamageColor { get; set; } = Color.Red;
     public ColorNode CombatHealColor { get; set; } = Color.Green;

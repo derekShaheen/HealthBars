@@ -432,6 +432,20 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         {
             ShowDps(bar, alphaMulti, barArea);
         }
+
+        if (bar.ShouldDrawCullingStrikeIndicator())
+        {
+            DrawCullingStrikeIndicator(bar, barArea);
+        }
+    }
+
+    private void DrawCullingStrikeIndicator(HealthBar bar, RectangleF barArea)
+    {
+        var indicatorSize = Math.Min(barArea.Width, barArea.Height) * 0.5f;
+        var indicatorPosition = new Vector2(barArea.Center.X - indicatorSize / 2, barArea.Center.Y - indicatorSize / 2);
+        var indicatorRect = new RectangleF(indicatorPosition.X, indicatorPosition.Y, indicatorSize, indicatorSize);
+
+        Graphics.DrawImage(FlatHealthbarTexture, indicatorRect, Color.Red);
     }
 
     private static float GetAlphaMulti(HealthBar bar, RectangleF barArea)
