@@ -38,7 +38,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
     private Vector2 _oldPlayerCoord;
     private HealthBar _playerBar;
     private CachedValue<bool> _ingameUiCheckVisible;
-    private CachedValue<ExileCore2.Shared.RectangleF> _windowRectangle;
+    private CachedValue<RectangleF> _windowRectangle;
 
     public override void OnLoad()
     {
