@@ -156,12 +156,14 @@ public class HealthBar
         if (!AllSettings.HasCullingStrike)
             return false;
 
+        float cullingThreshold = 1 + AllSettings.CullingThreshhold / 100f;
+
         return Type switch
         {
-            CreatureType.Normal => HpPercent <= 0.30f,
-            CreatureType.Magic => HpPercent <= 0.20f,
-            CreatureType.Rare => HpPercent <= 0.10f,
-            CreatureType.Unique => HpPercent <= 0.05f,
+            CreatureType.Normal => HpPercent <= 0.30f * cullingThreshold,
+            CreatureType.Magic => HpPercent <= 0.20f * cullingThreshold,
+            CreatureType.Rare => HpPercent <= 0.10f * cullingThreshold,
+            CreatureType.Unique => HpPercent <= 0.05f * cullingThreshold,
             _ => false
         };
     }
