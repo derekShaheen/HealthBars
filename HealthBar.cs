@@ -156,7 +156,7 @@ public class HealthBar
         if (!AllSettings.HasCullingStrike)
             return false;
 
-        float cullingMultiplier = 1.0f + (AllSettings.CullingThreshhold / 100f);
+        float cullingMultiplier = 1.0f + (AllSettings.CullingThreshold / 100f);
 
         return Type switch
         {
