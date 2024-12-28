@@ -44,8 +44,8 @@ public class HealthBarsSettings : ISettings
     [Menu("Has Culling Strike","You have a source of Culling Strike such as from a passive or support gem", 100)]
     public ToggleNode HasCullingStrike { get; set; } = new(false);
     [ConditionalDisplay(nameof(HasCullingStrike), true)]
-    [Menu("Culling Strike Threshhold", "If you have Culling the Hordes or some other threshhold increase", 100)]
-    public RangeNode<int> CullingThreshhold { get; set; } = new(0, 0, 300);
+    [Menu("Culling Strike Threshold", "If you have Culling the Hordes or some other threshold increase", 100)]
+    public RangeNode<int> CullingThreshold { get; set; } = new(0, 0, 300);
 
     public ColorNode CombatDamageColor { get; set; } = Color.Red;
     public ColorNode CombatHealColor { get; set; } = Color.Green;
