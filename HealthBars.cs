@@ -141,13 +141,6 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         if (!healthBar.Entity.IsAlive) return true;
         if (healthBar.HpPercent < 0.001f) return true;
         if (healthBar.Type == CreatureType.Minion && healthBar.HpPercent * 100 > Settings.ShowMinionOnlyWhenBelowHp) return true;
-        if (healthBar.Entity.League == LeagueType.Legion &&
-            healthBar.Entity.IsHidden &&
-            (healthBar.Entity.Rarity == MonsterRarity.Unique && !Settings.LegionSettings.ShowHiddenUniqueMonsters ||
-             healthBar.Entity.Rarity == MonsterRarity.Rare && !Settings.LegionSettings.ShowHiddenRareMonsters ||
-             healthBar.Entity.Rarity == MonsterRarity.Magic && !Settings.LegionSettings.ShowHiddenNormalAndMagicMonsters ||
-             healthBar.Entity.Rarity == MonsterRarity.White && !Settings.LegionSettings.ShowHiddenNormalAndMagicMonsters))
-            return true;
 
         return false;
     }
