@@ -325,16 +325,24 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
             try
             {
                 var lifeRect = new RectangleF(barPosition.X, barPosition.Y, Settings.BossOverlaySettings.Width, Settings.BossOverlaySettings.BarHeight);
-                DrawBar(healthBar, lifeRect, false, false, Settings.BossOverlaySettings.ShowMonsterNames ? healthBar.Entity.RenderName : null);
-                barPosition.Y += lifeRect.Height;
+                DrawBar(healthBar, lifeRect, false, true, Settings.BossOverlaySettings.ShowMonsterNames ? healthBar.Entity.RenderName : null, true);
+                barPosition.Y += lifeRect.Height + 2;
+
                 if (IsCastBarEnabled(healthBar))
                 {
-                    DrawCastBar(healthBar, lifeRect with { Y = lifeRect.Bottom },
+                    if (DrawCastBar(healthBar, lifeRect with { Y = barPosition.Y },
                         Settings.BossOverlaySettings.ShowCastBarStageNames,
                         Settings.CommonCastBarSettings.ShowNextStageNameInBossOverlay,
-                        Settings.CommonCastBarSettings.MaxSkillNameLengthForBossOverlay);
-                    barPosition.Y += lifeRect.Height;
+                        Settings.CommonCastBarSettings.MaxSkillNameLengthForBossOverlay))
+                    {
+                        barPosition.Y += lifeRect.Height + 2;
+                    }
                 }
+
+                var buffRect = new RectangleF(barPosition.X, barPosition.Y, lifeRect.Width, 0);
+                var buffsHeight = DrawBuffs(healthBar, buffRect);
+                barPosition.Y += buffsHeight;
+
             }
             catch (Exception ex)
             {
@@ -352,7 +360,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         DrawBar(bar, bar.DisplayArea, enableResizing, showDps, null);
     }
 
-    private void DrawBar(HealthBar bar, RectangleF barArea, bool enableResizing, bool showDps, string textPrefix)
+    private void DrawBar(HealthBar bar, RectangleF barArea, bool enableResizing, bool showDps, string textPrefix, bool bossOverlay = false)
     {
         var barText = $"{textPrefix} {GetTemplatedText(bar)}";
         barText = string.IsNullOrWhiteSpace(barText) ? null : barText.Trim();
@@ -423,8 +431,15 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         ShowHealthbarText(bar, barText, alphaMulti, barArea);
         if (showDps)
         {
-            ShowDps(bar, alphaMulti, barArea);
+            ShowDps(bar, alphaMulti, barArea, bossOverlay);
         }
+    }
+
+    private Color GetContrastingTextColor(Color background)
+    {
+        // Use the built-in GetBrightness method.
+        float brightness = background.GetBrightness();
+        return brightness > 0.5f ? Color.Black : Color.White;
     }
 
     private static float GetAlphaMulti(HealthBar bar, RectangleF barArea)
@@ -437,7 +452,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         return alphaMulti;
     }
 
-    private void ShowDps(HealthBar bar, float alphaMulti, RectangleF area)
+    private void ShowDps(HealthBar bar, float alphaMulti, RectangleF area, bool BossOverlay = false)
     {
         const int margin = 2;
         if (bar.EhpHistory.Count < 2) return;
@@ -457,12 +472,167 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
             ? Settings.CombatHealColor
             : Settings.CombatDamageColor;
 
-        var dpsText = dps.FormatHp();
+        var dpsText = "DPS: " + dps.FormatHp();
         var textArea = Graphics.MeasureText(dpsText);
-        var textCenter = new Vector2(area.Center.X, area.Bottom + textArea.Y / 2 + margin);
+        Vector2 textCenter;
+        if (BossOverlay)
+        {
+            textCenter = new Vector2(area.Right - textArea.X / 2, area.Top - textArea.Y / 2 - margin);
+        }
+        else
+        {
+            textCenter = new Vector2(area.Center.X, area.Bottom + textArea.Y / 2 + margin);
+        }
+
         Graphics.DrawBox(textCenter - textArea / 2, textCenter + textArea / 2, bar.Settings.TextBackground.MultiplyAlpha(alphaMulti));
         Graphics.DrawText(dpsText, textCenter - textArea / 2, damageColor.MultiplyAlpha(alphaMulti));
     }
+
+    private static readonly Dictionary<string, Color> BuffBackgroundColorLookup = new Dictionary<string, Color>(StringComparer.OrdinalIgnoreCase)
+{
+    { "Unicorn Farts", Color.FromArgb(130, 130, 130) },
+    { "Drought", Color.FromArgb(130, 68, 13) },
+    { "Intangibility", Color.FromArgb(130, 40, 13) },
+    { "Stunned", Color.FromArgb(170, 163, 50) },
+    { "Frozen", Color.FromArgb(18, 151, 180) },
+    { "Chilled", Color.FromArgb(70, 152, 170) },
+    { "Lightning Clone Retaliation", Color.FromArgb(14, 87, 180) },
+    { "Shocked", Color.FromArgb(21, 116, 188) },
+    { "Speed Aura", Color.FromArgb(0, 255, 84) },
+    { "Executioner's Presence", Color.FromArgb(128, 128, 128) },
+    { "Blinded", Color.FromArgb(128, 128, 128) },
+    { "Poisoned", Color.FromArgb(14, 134, 6) },
+    { "Resists Aura", Color.FromArgb(146, 149, 19) },
+    { "Ignited", Color.FromArgb(118, 3, 3) },
+    { "Withered", Color.FromArgb(89, 6, 162) },
+    { "Tempest Shrine", Color.FromArgb(11, 118, 165) },
+    { "Energy Shield Aura", Color.FromArgb(95, 131, 14) },
+    { "Armour Break", Color.FromArgb(128, 128, 128) },
+    { "Bleeding", Color.FromArgb(138, 22, 22) },
+    { "Freezing Shrine", Color.FromArgb(50, 67, 218) },
+    { "Meteoric Shrine", Color.FromArgb(163, 75, 36) },
+    { "Maimed", Color.FromArgb(140, 17, 17) },
+    { "Critical Weakness", Color.FromArgb(237, 236, 16) },
+    { "Thaumaturgist's Mark", Color.FromArgb(128, 128, 128) },
+    { "Fire Exposure", Color.FromArgb(126, 7, 7) },
+    { "Consecrated Ground", Color.FromArgb(99, 68, 21) },
+    { "Burning", Color.FromArgb(140, 58, 20) },
+    { "Frenzied", Color.FromArgb(109, 15, 15) },
+    { "Infernal Cry", Color.FromArgb(125, 18, 108) },
+    { "Physical Damage Aura", Color.FromArgb(15, 70, 112) },
+    { "Temporal Bubble", Color.FromArgb(84, 0, 165) },
+    { "Lightning Exposure", Color.FromArgb(0, 88, 179) },
+    { "Intervention", Color.FromArgb(128, 128, 128) },
+    { "Pinned", Color.FromArgb(8, 128, 67) },
+    { "Jagged Ground", Color.FromArgb(67, 43, 3) },
+    { "Pride", Color.FromArgb(128, 128, 128) },
+    { "Frost Bomb", Color.FromArgb(12, 4, 138) },
+    { "Cold Exposure", Color.FromArgb(66, 143, 208) },
+    { "Faster Run", Color.FromArgb(128, 128, 128) },
+    { "Living Blood", Color.FromArgb(110, 37, 7) },
+    { "Dazed", Color.FromArgb(112, 34, 151) },
+    { "Siphoning Ring", Color.FromArgb(128, 128, 128) },
+};
+
+    /// <summary>
+    /// Draws buffs underneath a given area.
+    /// Buffs are sorted alphabetically by DisplayName and drawn in-line.
+    /// If the combined width exceeds the allowed width, the next buff is moved to a new line.
+    /// A background box is drawn behind each buff.
+    /// Returns the total vertical height used.
+    /// </summary>
+    private float DrawBuffs(HealthBar bar, RectangleF area)
+    {
+        // Define margins and padding values.
+        const float horizontalMargin = 4f; // space between buff boxes
+        const float verticalMargin = 2f;   // space between lines
+        const float padding = 2f;          // padding inside each buff's box
+
+        float totalHeight = 0f;            // total height occupied so far (from the top of area.Y)
+        float currentLineHeight = 0f;      // maximum height of the current line
+        float currentX = area.X;           // current X position where the next buff will be drawn
+
+        var alphaMulti = GetAlphaMulti(bar, area);
+
+        var shadowOffset = new Vector2(1, 1);
+        var shadowColor = Color.Black;
+
+        // Get only buffs with a non-null, non-empty DisplayName and sort them alphabetically.
+        var buffs = bar.Entity.Buffs?
+            .Where(buff => !string.IsNullOrEmpty(buff.DisplayName))
+            .OrderBy(buff => buff.DisplayName)
+            .ToList();
+
+        if (buffs == null || buffs.Count == 0)
+            return 0f;
+
+        // The available width is the width of the provided area.
+        float availableWidth = area.Width;
+
+        foreach (var buff in buffs)
+        {
+            string displayText = buff.DisplayName;
+
+            Color bgColor = bar.Settings.TextBackground;
+            foreach (var kvp in BuffBackgroundColorLookup)
+            {
+                if (displayText.IndexOf(kvp.Key, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    bgColor = kvp.Value;
+                    break;
+                }
+            }
+
+            Color textColor = GetContrastingTextColor(bgColor);
+            if (textColor == Color.Black)
+            {
+                shadowColor = Color.White;
+            }
+
+            if (buff.Timer > 0 && buff.Timer < 99 && buff.MaxTime < 99)
+            {
+                // Format the timer as an integer (adjust formatting as needed).
+                displayText += $" {buff.Timer:F1}s";
+            }
+
+            // Measure the text size.
+            var textSize = Graphics.MeasureText(displayText);
+            // Calculate the box size with padding on all sides.
+            float boxWidth = textSize.X + 2 * padding;
+            float boxHeight = textSize.Y + 2 * padding;
+
+            // Check if drawing this buff would exceed the available width.
+            if (currentX - area.X + boxWidth > availableWidth)
+            {
+                // Move to next line: update totalHeight by the height of the current line plus vertical margin.
+                totalHeight += currentLineHeight + verticalMargin;
+                // Reset current X to the start of the area.
+                currentX = area.X;
+                // Reset current line height.
+                currentLineHeight = 0f;
+            }
+
+            // Define the box rectangle for the current buff.
+            var boxRect = new RectangleF(currentX, area.Y + totalHeight, boxWidth, boxHeight);
+            // Draw a background box behind the buff text.
+            Graphics.DrawBox(boxRect.TopLeft, boxRect.BottomRight, bgColor.MultiplyAlpha(alphaMulti));
+            // Draw the buff's DisplayName text inside the box (offset by the padding).
+            var textPos = new Vector2(currentX + padding, area.Y + totalHeight + padding);
+            Graphics.DrawText(displayText, textPos + shadowOffset, shadowColor);
+            Graphics.DrawText(displayText, textPos, textColor);
+
+            // Update currentX by moving to the right past the drawn box and the horizontal margin.
+            currentX += boxWidth + horizontalMargin;
+            // Keep track of the tallest box in the current line.
+            currentLineHeight = Math.Max(currentLineHeight, boxHeight);
+        }
+
+        // Add the last line's height.
+        totalHeight += currentLineHeight;
+
+        return totalHeight;
+    }
+
 
     private void ShowHealthbarText(HealthBar bar, string text, float alphaMulti, RectangleF area)
     {
@@ -521,16 +691,17 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
 
     private static readonly string TexturePrefix = "hb_";
 
-    private void DrawCastBar(HealthBar bar, ExileCore2.Shared.RectangleF area, bool drawStageNames, bool showNextStageName, int maxSkillNameLength)
+    private bool DrawCastBar(HealthBar bar, RectangleF area, bool drawStageNames, bool showNextStageName, int maxSkillNameLength)
     {
+        bool retValue = false;
         if (!bar.Entity.TryGetComponent<Actor>(out var actor))
         {
-            return;
+            return false;
         }
 
         if (actor?.AnimationController is not { } ac || actor.Action != ActionFlags.UsingAbility || ac.RawAnimationSpeed == 0)
         {
-            return;
+            return false;
         }
 
         var stages = ac.CurrentAnimation.AllStages.ToList();
@@ -540,13 +711,13 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
             : ac.MaxRawAnimationProgress;
         if (ac.RawAnimationProgress > maxRawProgress)
         {
-            return;
+            return false;
         }
 
         var alphaMulti = GetAlphaMulti(bar, area);
         if (alphaMulti == 0)
         {
-            return;
+            return false;
         }
 
         var width = area.Width;
@@ -573,6 +744,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         {
             var color = (nextDangerousStage != null ? settings.DangerTextColor : settings.NoDangerTextColor).MultiplyAlpha(alphaMulti);
             Graphics.DrawText(mainText, topLeft, color);
+            retValue = true;
         }
 
         var occupiedSlots = new Dictionary<int, float>();
@@ -597,12 +769,16 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
                 Graphics.DrawBox(textStart, textStart + textSize, settings.BackgroundColor.MultiplyAlpha(alphaMulti));
                 Graphics.DrawText(text, textStart, settings.StageTextColor.MultiplyAlpha(alphaMulti));
                 Graphics.DrawLine(textStart, topLeft with { X = textStart.X }, 1, Color.Green.MultiplyAlpha(alphaMulti));
+                retValue = true;
             }
             else
             {
                 Graphics.DrawLine(topLeft with { X = stageX }, bottomRight with { X = stageX }, 1, Color.Green.MultiplyAlpha(alphaMulti));
+                retValue = true;
             }
         }
+
+        return true;
     }
 
     public override void EntityAdded(Entity entity)
