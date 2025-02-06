@@ -489,91 +489,119 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
     }
 
     private static readonly Dictionary<string, Color> BuffBackgroundColorLookup = new Dictionary<string, Color>(StringComparer.OrdinalIgnoreCase)
-{
-    { "Unicorn Farts", Color.FromArgb(130, 130, 130) },
-    { "Drought", Color.FromArgb(130, 68, 13) },
-    { "Intangibility", Color.FromArgb(130, 40, 13) },
-    { "Stunned", Color.FromArgb(170, 163, 50) },
-    { "Frozen", Color.FromArgb(18, 151, 180) },
-    { "Chilled", Color.FromArgb(70, 152, 170) },
-    { "Lightning Clone Retaliation", Color.FromArgb(14, 87, 180) },
-    { "Shocked", Color.FromArgb(21, 116, 188) },
-    { "Speed Aura", Color.FromArgb(0, 255, 84) },
-    { "Executioner's Presence", Color.FromArgb(128, 128, 128) },
-    { "Blinded", Color.FromArgb(128, 128, 128) },
-    { "Poisoned", Color.FromArgb(14, 134, 6) },
-    { "Resists Aura", Color.FromArgb(146, 149, 19) },
-    { "Ignited", Color.FromArgb(118, 3, 3) },
-    { "Withered", Color.FromArgb(89, 6, 162) },
-    { "Tempest Shrine", Color.FromArgb(11, 118, 165) },
-    { "Energy Shield Aura", Color.FromArgb(95, 131, 14) },
-    { "Armour Break", Color.FromArgb(128, 128, 128) },
-    { "Bleeding", Color.FromArgb(138, 22, 22) },
-    { "Freezing Shrine", Color.FromArgb(50, 67, 218) },
-    { "Meteoric Shrine", Color.FromArgb(163, 75, 36) },
-    { "Maimed", Color.FromArgb(140, 17, 17) },
-    { "Critical Weakness", Color.FromArgb(237, 236, 16) },
-    { "Thaumaturgist's Mark", Color.FromArgb(128, 128, 128) },
-    { "Fire Exposure", Color.FromArgb(126, 7, 7) },
-    { "Consecrated Ground", Color.FromArgb(99, 68, 21) },
-    { "Burning", Color.FromArgb(140, 58, 20) },
-    { "Frenzied", Color.FromArgb(109, 15, 15) },
-    { "Infernal Cry", Color.FromArgb(125, 18, 108) },
-    { "Physical Damage Aura", Color.FromArgb(15, 70, 112) },
-    { "Temporal Bubble", Color.FromArgb(84, 0, 165) },
-    { "Lightning Exposure", Color.FromArgb(0, 88, 179) },
-    { "Intervention", Color.FromArgb(128, 128, 128) },
-    { "Pinned", Color.FromArgb(8, 128, 67) },
-    { "Jagged Ground", Color.FromArgb(67, 43, 3) },
-    { "Pride", Color.FromArgb(128, 128, 128) },
-    { "Frost Bomb", Color.FromArgb(12, 4, 138) },
-    { "Cold Exposure", Color.FromArgb(66, 143, 208) },
-    { "Faster Run", Color.FromArgb(128, 128, 128) },
-    { "Living Blood", Color.FromArgb(110, 37, 7) },
-    { "Dazed", Color.FromArgb(112, 34, 151) },
-    { "Siphoning Ring", Color.FromArgb(128, 128, 128) },
-};
+    {
+        { "Unicorn Farts", Color.FromArgb(130, 130, 130) },
+        { "Drought", Color.FromArgb(130, 68, 13) },
+        { "Intangibility", Color.FromArgb(130, 40, 13) },
+        { "Stunned", Color.FromArgb(170, 163, 50) },
+        { "Frozen", Color.FromArgb(18, 151, 180) },
+        { "Chilled", Color.FromArgb(70, 152, 170) },
+        { "Lightning Clone Retaliation", Color.FromArgb(14, 87, 180) },
+        { "Shocked", Color.FromArgb(21, 116, 188) },
+        { "Speed Aura", Color.FromArgb(0, 255, 84) },
+        { "Executioner's Presence", Color.FromArgb(128, 128, 128) },
+        { "Blinded", Color.FromArgb(128, 128, 128) },
+        { "Poisoned", Color.FromArgb(14, 134, 6) },
+        { "Resists Aura", Color.FromArgb(146, 149, 19) },
+        { "Ignited", Color.FromArgb(118, 3, 3) },
+        { "Withered", Color.FromArgb(89, 6, 162) },
+        { "Tempest Shrine", Color.FromArgb(11, 118, 165) },
+        { "Energy Shield Aura", Color.FromArgb(95, 131, 14) },
+        { "Armour Break", Color.FromArgb(128, 128, 128) },
+        { "Bleeding", Color.FromArgb(138, 22, 22) },
+        { "Freezing Shrine", Color.FromArgb(50, 67, 218) },
+        { "Meteoric Shrine", Color.FromArgb(163, 75, 36) },
+        { "Maimed", Color.FromArgb(140, 17, 17) },
+        { "Critical Weakness", Color.FromArgb(237, 236, 16) },
+        { "Thaumaturgist's Mark", Color.FromArgb(128, 128, 128) },
+        { "Fire Exposure", Color.FromArgb(126, 7, 7) },
+        { "Consecrated Ground", Color.FromArgb(99, 68, 21) },
+        { "Burning", Color.FromArgb(140, 58, 20) },
+        { "Frenzied", Color.FromArgb(109, 15, 15) },
+        { "Infernal Cry", Color.FromArgb(125, 18, 108) },
+        { "Physical Damage Aura", Color.FromArgb(15, 70, 112) },
+        { "Temporal Bubble", Color.FromArgb(84, 0, 165) },
+        { "Lightning Exposure", Color.FromArgb(0, 88, 179) },
+        { "Intervention", Color.FromArgb(128, 128, 128) },
+        { "Pinned", Color.FromArgb(8, 128, 67) },
+        { "Jagged Ground", Color.FromArgb(67, 43, 3) },
+        { "Pride", Color.FromArgb(128, 128, 128) },
+        { "Frost Bomb", Color.FromArgb(12, 4, 138) },
+        { "Cold Exposure", Color.FromArgb(66, 143, 208) },
+        { "Faster Run", Color.FromArgb(128, 128, 128) },
+        { "Living Blood", Color.FromArgb(110, 37, 7) },
+        { "Dazed", Color.FromArgb(112, 34, 151) },
+        { "Siphoning Ring", Color.FromArgb(128, 128, 128) },
+        { "Acceleration Shrine", Color.FromArgb(128, 128, 128) },
+        { "Hinder", Color.FromArgb(112, 34, 151) },
+        { "Phasing Buff", Color.FromArgb(112, 34, 151) },
+}   ;
 
     /// <summary>
-    /// Draws buffs underneath a given area.
-    /// Buffs are sorted alphabetically by DisplayName and drawn in-line.
-    /// If the combined width exceeds the allowed width, the next buff is moved to a new line.
-    /// A background box is drawn behind each buff.
-    /// Returns the total vertical height used.
+    /// Draws buffs underneath a given area. Multiple buffs with the same DisplayName are merged
+    /// into one entry that shows the stack count (if > 1) before the timer.
+    /// Buffs are sorted alphabetically and drawn in–line with wrapping.
     /// </summary>
+    /// <param name="bar">The HealthBar containing the entity and its buffs.</param>
+    /// <param name="area">The drawing area (X and Width are used; Y is the top baseline).</param>
+    /// <returns>The total vertical height used to draw the buffs.</returns>
     private float DrawBuffs(HealthBar bar, RectangleF area)
     {
-        // Define margins and padding values.
+        // Define margins and padding.
         const float horizontalMargin = 4f; // space between buff boxes
         const float verticalMargin = 2f;   // space between lines
         const float padding = 2f;          // padding inside each buff's box
 
-        float totalHeight = 0f;            // total height occupied so far (from the top of area.Y)
+        float totalHeight = 0f;            // vertical offset for drawn lines
         float currentLineHeight = 0f;      // maximum height of the current line
         float currentX = area.X;           // current X position where the next buff will be drawn
 
         var alphaMulti = GetAlphaMulti(bar, area);
 
-        var shadowOffset = new Vector2(1, 1);
-        var shadowColor = Color.Black;
-
-        // Get only buffs with a non-null, non-empty DisplayName and sort them alphabetically.
+        // Get buffs with a non-empty DisplayName.
         var buffs = bar.Entity.Buffs?
             .Where(buff => !string.IsNullOrEmpty(buff.DisplayName))
-            .OrderBy(buff => buff.DisplayName)
             .ToList();
 
         if (buffs == null || buffs.Count == 0)
             return 0f;
 
+        // Group buffs by DisplayName.
+        // For each group, count the number of occurrences and pick the maximum Timer value.
+        var groupedBuffs = buffs
+            .GroupBy(b => b.DisplayName)
+            .Select(g => new
+            {
+                DisplayName = g.Key,
+                Count = g.Count(),
+                Timer = g.Max(b => b.Timer)
+            })
+            .OrderBy(x => x.DisplayName)
+            .ToList();
+
         // The available width is the width of the provided area.
         float availableWidth = area.Width;
 
-        foreach (var buff in buffs)
+        // Loop through each unique buff.
+        foreach (var uniqueBuff in groupedBuffs)
         {
-            string displayText = buff.DisplayName;
+            // Build the display text:
+            // Start with the DisplayName.
+            string displayText = uniqueBuff.DisplayName;
+            // If more than one instance exists, append the stack count.
+            if (uniqueBuff.Count > 1)
+            {
+                displayText += " (" + uniqueBuff.Count.ToString() + ")";
+            }
+            // Append the timer if applicable.
+            if (uniqueBuff.Timer > 0 && uniqueBuff.Timer < 99)
+            {
+                displayText += $" {uniqueBuff.Timer:F1}s";
+            }
 
-            Color bgColor = bar.Settings.TextBackground;
+            // Determine the background color via the lookup table.
+            // (Default to the plugin’s TextBackground if no keyword matches.)
+            Color bgColor = Color.DarkGray;
             foreach (var kvp in BuffBackgroundColorLookup)
             {
                 if (displayText.IndexOf(kvp.Key, StringComparison.OrdinalIgnoreCase) >= 0)
@@ -583,51 +611,37 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
                 }
             }
 
+            // Choose a contrasting text color (either white or black) based on the background brightness.
             Color textColor = GetContrastingTextColor(bgColor);
-            if (textColor == Color.Black)
-            {
-                shadowColor = Color.White;
-            }
 
-            if (buff.Timer > 0 && buff.Timer < 99 && buff.MaxTime < 99)
-            {
-                // Format the timer as an integer (adjust formatting as needed).
-                displayText += $" {buff.Timer:F1}s";
-            }
-
-            // Measure the text size.
+            // Measure the complete display text.
             var textSize = Graphics.MeasureText(displayText);
-            // Calculate the box size with padding on all sides.
             float boxWidth = textSize.X + 2 * padding;
             float boxHeight = textSize.Y + 2 * padding;
 
-            // Check if drawing this buff would exceed the available width.
+            // If adding this buff would exceed the available width, wrap to the next line.
             if (currentX - area.X + boxWidth > availableWidth)
             {
-                // Move to next line: update totalHeight by the height of the current line plus vertical margin.
                 totalHeight += currentLineHeight + verticalMargin;
-                // Reset current X to the start of the area.
                 currentX = area.X;
-                // Reset current line height.
                 currentLineHeight = 0f;
             }
 
-            // Define the box rectangle for the current buff.
+            // Define the box rectangle for this buff cell.
             var boxRect = new RectangleF(currentX, area.Y + totalHeight, boxWidth, boxHeight);
-            // Draw a background box behind the buff text.
             Graphics.DrawBox(boxRect.TopLeft, boxRect.BottomRight, bgColor.MultiplyAlpha(alphaMulti));
-            // Draw the buff's DisplayName text inside the box (offset by the padding).
-            var textPos = new Vector2(currentX + padding, area.Y + totalHeight + padding);
-            Graphics.DrawText(displayText, textPos + shadowOffset, shadowColor);
-            Graphics.DrawText(displayText, textPos, textColor);
 
-            // Update currentX by moving to the right past the drawn box and the horizontal margin.
+            // Draw the text inside the box.
+            var textPos = new Vector2(currentX + padding, area.Y + totalHeight + padding);
+            Graphics.DrawText(displayText, textPos, textColor.MultiplyAlpha(alphaMulti));
+
+            // Move currentX to the next position.
             currentX += boxWidth + horizontalMargin;
-            // Keep track of the tallest box in the current line.
+            // Update the current line height if necessary.
             currentLineHeight = Math.Max(currentLineHeight, boxHeight);
         }
 
-        // Add the last line's height.
+        // Add the height of the last line.
         totalHeight += currentLineHeight;
 
         return totalHeight;
