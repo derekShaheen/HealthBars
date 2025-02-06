@@ -326,7 +326,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
             {
                 var lifeRect = new RectangleF(barPosition.X, barPosition.Y, Settings.BossOverlaySettings.Width, Settings.BossOverlaySettings.BarHeight);
                 DrawBar(healthBar, lifeRect, false, true, Settings.BossOverlaySettings.ShowMonsterNames ? healthBar.Entity.RenderName : null, true);
-                barPosition.Y += lifeRect.Height + 2;
+                barPosition.Y += lifeRect.Height + 3;
 
                 if (IsCastBarEnabled(healthBar))
                 {
@@ -335,11 +335,11 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
                         Settings.CommonCastBarSettings.ShowNextStageNameInBossOverlay,
                         Settings.CommonCastBarSettings.MaxSkillNameLengthForBossOverlay))
                     {
-                        barPosition.Y += lifeRect.Height + 2;
+                        barPosition.Y += lifeRect.Height + 3;
                     }
                 }
 
-                var buffRect = new RectangleF(barPosition.X, barPosition.Y, lifeRect.Width, 0);
+                var buffRect = new RectangleF(barPosition.X - 1, barPosition.Y, lifeRect.Width, 0);
                 var buffsHeight = DrawBuffs(healthBar, buffRect);
                 barPosition.Y += buffsHeight;
 
@@ -490,7 +490,6 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
 
     private static readonly Dictionary<string, Color> BuffBackgroundColorLookup = new Dictionary<string, Color>(StringComparer.OrdinalIgnoreCase)
     {
-        { "Unicorn Farts", Color.FromArgb(130, 130, 130) },
         { "Drought", Color.FromArgb(130, 68, 13) },
         { "Intangibility", Color.FromArgb(130, 40, 13) },
         { "Stunned", Color.FromArgb(170, 163, 50) },
@@ -601,7 +600,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
 
             // Determine the background color via the lookup table.
             // (Default to the plugin’s TextBackground if no keyword matches.)
-            Color bgColor = Color.DarkGray;
+            Color bgColor = Color.DarkSlateGray;
             foreach (var kvp in BuffBackgroundColorLookup)
             {
                 if (displayText.IndexOf(kvp.Key, StringComparison.OrdinalIgnoreCase) >= 0)
