@@ -40,6 +40,29 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
     private CachedValue<bool> _ingameUiCheckVisible;
     private CachedValue<RectangleF> _windowRectangle;
 
+    #region DPS Tracking Fields
+
+    // A list to hold recent damage events.
+    private List<DamageEvent> _damageEvents = new List<DamageEvent>();
+
+    // A dictionary to store the last–known HP for each boss health bar (keyed by entity address).
+    private Dictionary<long, float> _lastHp = new Dictionary<long, float>();
+
+    // The sliding time window over which we average DPS (e.g., 10 seconds).
+    private readonly TimeSpan DamageWindow = TimeSpan.FromSeconds(2);
+
+    // Global maximum DPS detected since the last area change.
+    private double _maxDps = 0;
+
+    // A simple structure to record a damage event.
+    private struct DamageEvent
+    {
+        public DateTime Time;
+        public float Damage;
+    }
+
+    #endregion
+
     public override void OnLoad()
     {
         CanUseMultiThreading = true;
@@ -131,6 +154,11 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
     {
         _oldPlayerCoord = Vector2.Zero;
         LoadConfig();
+
+        // Clear DPS tracking data on area change.
+        _damageEvents.Clear();
+        _lastHp.Clear();
+        _maxDps = 0;
     }
 
     private bool SkipHealthBar(HealthBar healthBar, bool checkDistance)
@@ -199,6 +227,9 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         foreach (var validEntity in GameController.EntityListWrapper.ValidEntitiesByType[EntityType.Monster]
                      .Concat(GameController.EntityListWrapper.ValidEntitiesByType[EntityType.Player]))
         {
+            // After processing all entities, update our global damage tracking.
+            UpdateGlobalDamageTracking(validEntity);
+
             var healthBar = validEntity.GetHudComponent<HealthBar>();
             if (healthBar == null) continue;
 
@@ -266,6 +297,37 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         playerBar.DisplayArea = background;
     }
 
+    /// <summary>
+    /// For each monster health bar included in the BossOverlay, check if its HP has dropped
+    /// since the last tick. If so, record the difference as damage.
+    /// Also prune damage events older than our window.
+    /// </summary>
+    private void UpdateGlobalDamageTracking(Entity entity)
+    {
+        var now = DateTime.UtcNow;
+        if (entity.GetHudComponent<HealthBar>() is HealthBar healthBar)
+        {
+            float currentHp = healthBar.Life?.CurHP ?? 0;
+            long id = healthBar.Entity.Address;
+            if (_lastHp.TryGetValue(id, out float lastHp))
+            {
+                if (lastHp > currentHp)
+                {
+                    float damage = lastHp - currentHp;
+                    _damageEvents.Add(new DamageEvent { Time = now, Damage = damage });
+                }
+            }
+            _lastHp[id] = currentHp;
+        }
+        // Remove damage events older than our sliding window.
+        _damageEvents.RemoveAll(de => (now - de.Time) > DamageWindow);
+
+        // Compute current DPS (over the sliding window) and update maximum DPS if needed.
+        float totalDamage = _damageEvents.Sum(de => de.Damage);
+        double currentDps = totalDamage / DamageWindow.TotalSeconds;
+        _maxDps = Math.Max(_maxDps, currentDps);
+    }
+
     public override void Render()
     {
         if (!_canTick) return;
@@ -310,6 +372,47 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
 
         bossOverlayItems.Sort((x, y) => x.StableId.CompareTo(y.StableId));
         DrawBossOverlay(bossOverlayItems);
+
+        DrawAverageDps();
+    }
+
+    /// <summary>
+    /// Calculates the average DPS (total damage divided by the sliding window length)
+    /// and draws it in a box to the left of the BossOverlay.
+    /// </summary>
+    private void DrawAverageDps()
+    {
+        float totalDamage = _damageEvents.Sum(de => de.Damage);
+        double avgDps = totalDamage / DamageWindow.TotalSeconds;
+        double maxDps = _maxDps;
+
+        // Define a fixed size and margin for our DPS box.
+        const float boxWidth = 130f;
+        const float boxHeight = 50f; // increased height for two lines
+        const float margin = 8f;
+        var bossOverlayLocation = Settings.BossOverlaySettings.Location.Value;
+        var dpsBoxRect = new RectangleF(bossOverlayLocation.X - boxWidth - margin, bossOverlayLocation.Y - (boxHeight / 2), boxWidth, boxHeight);
+
+        // Draw a semi–transparent background.
+        Graphics.DrawBox(dpsBoxRect.TopLeft, dpsBoxRect.BottomRight, Color.Black.MultiplyAlpha(0.6f));
+
+        // Build display texts.
+        string avgText = $"Avg DPS: {avgDps.FormatHp()}";
+        string maxText = $"Max DPS: {maxDps.FormatHp()}";
+
+        var avgTextSize = Graphics.MeasureText(avgText);
+        var maxTextSize = Graphics.MeasureText(maxText);
+
+        // Position the average DPS text in the top half, and the max DPS text in the bottom half.
+        var avgTextPos = new Vector2(
+            dpsBoxRect.X + (boxWidth - avgTextSize.X) / 2,
+            dpsBoxRect.Y + (boxHeight / 2 - avgTextSize.Y) / 2);
+        var maxTextPos = new Vector2(
+            dpsBoxRect.X + (boxWidth - maxTextSize.X) / 2,
+            dpsBoxRect.Y + (boxHeight / 2) + ((boxHeight / 2 - maxTextSize.Y) / 2));
+
+        Graphics.DrawText(avgText, avgTextPos, Color.White);
+        Graphics.DrawText(maxText, maxTextPos, Color.White);
     }
 
     private void DrawBossOverlay(IEnumerable<HealthBar> items)
