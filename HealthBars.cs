@@ -54,6 +54,12 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
     // Global maximum DPS detected since the last area change.
     private double _maxDps = 0;
 
+    // The time when the area started.
+    private DateTime _areaStartTime = DateTime.UtcNow;
+
+    // Cumulative damage dealt (sum of all damage events) since the area began.
+    private float _cumulativeDamage = 0;
+
     // A simple structure to record a damage event.
     private struct DamageEvent
     {
@@ -155,10 +161,12 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         _oldPlayerCoord = Vector2.Zero;
         LoadConfig();
 
-        // Clear DPS tracking data on area change.
+        // Reset all DPS tracking data on area change.
         _damageEvents.Clear();
         _lastHp.Clear();
         _maxDps = 0;
+        _cumulativeDamage = 0;
+        _areaStartTime = DateTime.UtcNow;
     }
 
     private bool SkipHealthBar(HealthBar healthBar, bool checkDistance)
@@ -315,6 +323,8 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
                 {
                     float damage = lastHp - currentHp;
                     _damageEvents.Add(new DamageEvent { Time = now, Damage = damage });
+                    // Add to cumulative damage for area-average DPS.
+                    _cumulativeDamage += damage;
                 }
             }
             _lastHp[id] = currentHp;
@@ -373,46 +383,60 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         bossOverlayItems.Sort((x, y) => x.StableId.CompareTo(y.StableId));
         DrawBossOverlay(bossOverlayItems);
 
-        DrawAverageDps();
+        DrawSideDPS();
     }
 
     /// <summary>
     /// Calculates the average DPS (total damage divided by the sliding window length)
     /// and draws it in a box to the left of the BossOverlay.
     /// </summary>
-    private void DrawAverageDps()
+    private void DrawSideDPS()
     {
-        float totalDamage = _damageEvents.Sum(de => de.Damage);
-        double avgDps = totalDamage / DamageWindow.TotalSeconds;
+        // Compute current DPS over the sliding window.
+        float totalDamageCurrent = _damageEvents.Sum(de => de.Damage);
+        double currentDps = totalDamageCurrent / DamageWindow.TotalSeconds;
         double maxDps = _maxDps;
+        // Compute average DPS over the area lifetime.
+        double elapsedSeconds = (DateTime.UtcNow - _areaStartTime).TotalSeconds;
+        double avgDps = elapsedSeconds > 0 ? _cumulativeDamage / elapsedSeconds : 0;
 
         // Define a fixed size and margin for our DPS box.
-        const float boxWidth = 130f;
-        const float boxHeight = 50f; // increased height for two lines
+        const float boxWidth = 150f;
+        const float boxHeight = 70f; // increased height for three lines
         const float margin = 8f;
         var bossOverlayLocation = Settings.BossOverlaySettings.Location.Value;
-        var dpsBoxRect = new RectangleF(bossOverlayLocation.X - boxWidth - margin, bossOverlayLocation.Y - (boxHeight / 2), boxWidth, boxHeight);
+        var dpsBoxRect = new RectangleF(bossOverlayLocation.X - boxWidth - margin, bossOverlayLocation.Y - (boxHeight / 2) - 50, boxWidth, boxHeight);
 
         // Draw a semi–transparent background.
         Graphics.DrawBox(dpsBoxRect.TopLeft, dpsBoxRect.BottomRight, Color.Black.MultiplyAlpha(0.6f));
 
         // Build display texts.
-        string avgText = $"Avg DPS: {avgDps.FormatHp()}";
+        string currentText = $"Current DPS: {currentDps.FormatHp()}";
         string maxText = $"Max DPS: {maxDps.FormatHp()}";
+        string avgText = $"Avg DPS: {avgDps.FormatHp()}";
 
-        var avgTextSize = Graphics.MeasureText(avgText);
+        // We'll use a sample text height (you may adjust if needed).
+        var sampleTextSize = Graphics.MeasureText("X");
+        float lineHeight = sampleTextSize.Y;
+        float verticalPadding = 4f;
+
+        // Compute Y positions for each line.
+        float firstLineY = dpsBoxRect.Y + verticalPadding;
+        float secondLineY = firstLineY + lineHeight + verticalPadding;
+        float thirdLineY = secondLineY + lineHeight + verticalPadding;
+
+        // Center each text horizontally.
+        var currentTextSize = Graphics.MeasureText(currentText);
         var maxTextSize = Graphics.MeasureText(maxText);
+        var avgTextSize = Graphics.MeasureText(avgText);
 
-        // Position the average DPS text in the top half, and the max DPS text in the bottom half.
-        var avgTextPos = new Vector2(
-            dpsBoxRect.X + (boxWidth - avgTextSize.X) / 2,
-            dpsBoxRect.Y + (boxHeight / 2 - avgTextSize.Y) / 2);
-        var maxTextPos = new Vector2(
-            dpsBoxRect.X + (boxWidth - maxTextSize.X) / 2,
-            dpsBoxRect.Y + (boxHeight / 2) + ((boxHeight / 2 - maxTextSize.Y) / 2));
+        var currentTextPos = new Vector2(dpsBoxRect.X + (boxWidth - currentTextSize.X) / 2, firstLineY);
+        var maxTextPos = new Vector2(dpsBoxRect.X + (boxWidth - maxTextSize.X) / 2, secondLineY);
+        var avgTextPos = new Vector2(dpsBoxRect.X + (boxWidth - avgTextSize.X) / 2, thirdLineY);
 
-        Graphics.DrawText(avgText, avgTextPos, Color.White);
+        Graphics.DrawText(currentText, currentTextPos, Color.White);
         Graphics.DrawText(maxText, maxTextPos, Color.White);
+        Graphics.DrawText(avgText, avgTextPos, Color.White);
     }
 
     private void DrawBossOverlay(IEnumerable<HealthBar> items)
@@ -538,11 +562,26 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         }
     }
 
+    //private Color GetContrastingTextColor(Color background)
+    //{
+    //    // Use the built-in GetBrightness method.
+    //    float brightness = background.GetBrightness();
+    //    return brightness > 0.5f ? Color.Black : Color.White;
+    //}
+
+    /// <summary>
+    /// Returns a contrasting text color (either black or white) based on the brightness of the background color.
+    /// </summary>
+    /// <param name="background">The background color.</param>
+    /// <returns>Black if the background is bright; white if it is dark.</returns>
     private Color GetContrastingTextColor(Color background)
     {
-        // Use the built-in GetBrightness method.
-        float brightness = background.GetBrightness();
-        return brightness > 0.5f ? Color.Black : Color.White;
+        // Calculate brightness using the luminance formula.
+        // The weights (0.299, 0.587, 0.114) are based on human perception.
+        double brightness = (background.R * 0.299 + background.G * 0.587 + background.B * 0.114) / 255;
+
+        // You can adjust the threshold (here 0.5) as needed.
+        return brightness > 0.5 ? Color.Black : Color.White;
     }
 
     private static float GetAlphaMulti(HealthBar bar, RectangleF barArea)
@@ -597,9 +636,9 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         { "Intangibility", Color.FromArgb(130, 40, 13) },
         { "Stunned", Color.FromArgb(170, 163, 50) },
         { "Frozen", Color.FromArgb(18, 151, 180) },
-        { "Chilled", Color.FromArgb(70, 152, 170) },
+        //{ "Chilled", Color.FromArgb(70, 152, 170) },
         { "Lightning Clone Retaliation", Color.FromArgb(14, 87, 180) },
-        { "Shocked", Color.FromArgb(21, 116, 188) },
+        { "Shocked", Color.FromArgb(0, 255, 84) }, // Color.FromArgb(21, 116, 188) },
         { "Speed Aura", Color.FromArgb(0, 255, 84) },
         { "Executioner's Presence", Color.FromArgb(128, 128, 128) },
         { "Blinded", Color.FromArgb(128, 128, 128) },
@@ -627,7 +666,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         { "Intervention", Color.FromArgb(128, 128, 128) },
         { "Pinned", Color.FromArgb(8, 128, 67) },
         { "Jagged Ground", Color.FromArgb(67, 43, 3) },
-        { "Pride", Color.FromArgb(128, 128, 128) },
+        { "Pride?", Color.FromArgb(128, 128, 128) },
         { "Frost Bomb", Color.FromArgb(12, 4, 138) },
         { "Cold Exposure", Color.FromArgb(66, 143, 208) },
         { "Faster Run", Color.FromArgb(128, 128, 128) },
@@ -657,6 +696,9 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         float totalHeight = 0f;            // vertical offset for drawn lines
         float currentLineHeight = 0f;      // maximum height of the current line
         float currentX = area.X;           // current X position where the next buff will be drawn
+
+        var shadowOffset = new Vector2(1, 1);
+        var shadowColor = Color.Black;
 
         var alphaMulti = GetAlphaMulti(bar, area);
 
@@ -704,13 +746,24 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
             // Determine the background color via the lookup table.
             // (Default to the plugin’s TextBackground if no keyword matches.)
             Color bgColor = Color.DarkSlateGray;
+            bool foundMapping = false;
             foreach (var kvp in BuffBackgroundColorLookup)
             {
                 if (displayText.IndexOf(kvp.Key, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     bgColor = kvp.Value;
+                    foundMapping = true;
                     break;
                 }
+            }
+
+            // If no mapping was found and there are mappings defined, pick one deterministically.
+            if (!foundMapping && BuffBackgroundColorLookup.Count > 0)
+            {
+                // Predictably select a color based on the display text.
+                var colorList = BuffBackgroundColorLookup.Values.ToList();
+                int index = Math.Abs(displayText.GetHashCode()) % colorList.Count;
+                bgColor = colorList[index];
             }
 
             // Choose a contrasting text color (either white or black) based on the background brightness.
@@ -735,6 +788,10 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
 
             // Draw the text inside the box.
             var textPos = new Vector2(currentX + padding, area.Y + totalHeight + padding);
+            if (textColor != Color.Black)
+            {
+                Graphics.DrawText(displayText, textPos + shadowOffset, shadowColor);
+            }
             Graphics.DrawText(displayText, textPos, textColor.MultiplyAlpha(alphaMulti));
 
             // Move currentX to the next position.
