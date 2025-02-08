@@ -15,6 +15,7 @@ using ExileCore2.Shared.Enums;
 using ExileCore2.Shared.Helpers;
 using ImGuiNET;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RectangleF = ExileCore2.Shared.RectangleF;
 using Vector2 = System.Numerics.Vector2;
 
@@ -581,7 +582,7 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         double brightness = (background.R * 0.299 + background.G * 0.587 + background.B * 0.114) / 255;
 
         // You can adjust the threshold (here 0.5) as needed.
-        return brightness > 0.5 ? Color.Black : Color.White;
+        return brightness > 0.75 ? Color.Black : Color.White;
     }
 
     private static float GetAlphaMulti(HealthBar bar, RectangleF barArea)
@@ -636,11 +637,11 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         { "Intangibility", Color.FromArgb(130, 40, 13) },
         { "Stunned", Color.FromArgb(170, 163, 50) },
         { "Frozen", Color.FromArgb(18, 151, 180) },
-        //{ "Chilled", Color.FromArgb(70, 152, 170) },
+        { "Chilled", Color.FromArgb(70, 152, 170) },
         { "Lightning Clone Retaliation", Color.FromArgb(14, 87, 180) },
-        { "Shocked", Color.FromArgb(0, 255, 84) }, // Color.FromArgb(21, 116, 188) },
-        { "Speed Aura", Color.FromArgb(0, 255, 84) },
-        { "Executioner's Presence", Color.FromArgb(128, 128, 128) },
+        { "Shocked", Color.FromArgb(21, 116, 188) },
+        { "Speed Aura", Color.FromArgb(0, 165, 84) },
+        { "Executioner's Presence", Color.FromArgb(109, 15, 15) },
         { "Blinded", Color.FromArgb(128, 128, 128) },
         { "Poisoned", Color.FromArgb(14, 134, 6) },
         { "Resists Aura", Color.FromArgb(146, 149, 19) },
@@ -648,13 +649,13 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         { "Withered", Color.FromArgb(89, 6, 162) },
         { "Tempest Shrine", Color.FromArgb(11, 118, 165) },
         { "Energy Shield Aura", Color.FromArgb(95, 131, 14) },
-        { "Armour Break", Color.FromArgb(128, 128, 128) },
+        { "Armour Break", Color.FromArgb(138, 22, 22) },
         { "Bleeding", Color.FromArgb(138, 22, 22) },
         { "Freezing Shrine", Color.FromArgb(50, 67, 218) },
         { "Meteoric Shrine", Color.FromArgb(163, 75, 36) },
         { "Maimed", Color.FromArgb(140, 17, 17) },
         { "Critical Weakness", Color.FromArgb(237, 236, 16) },
-        { "Thaumaturgist's Mark", Color.FromArgb(128, 128, 128) },
+        { "Thaumaturgist's Mark", Color.FromArgb(125, 18, 108) },
         { "Fire Exposure", Color.FromArgb(126, 7, 7) },
         { "Consecrated Ground", Color.FromArgb(99, 68, 21) },
         { "Burning", Color.FromArgb(140, 58, 20) },
@@ -663,20 +664,35 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         { "Physical Damage Aura", Color.FromArgb(15, 70, 112) },
         { "Temporal Bubble", Color.FromArgb(84, 0, 165) },
         { "Lightning Exposure", Color.FromArgb(0, 88, 179) },
-        { "Intervention", Color.FromArgb(128, 128, 128) },
+        { "Intervention", Color.FromArgb(8, 128, 67) },
         { "Pinned", Color.FromArgb(8, 128, 67) },
         { "Jagged Ground", Color.FromArgb(67, 43, 3) },
-        { "Pride?", Color.FromArgb(128, 128, 128) },
+        { "Pride?", Color.FromArgb(112, 34, 151) },
         { "Frost Bomb", Color.FromArgb(12, 4, 138) },
         { "Cold Exposure", Color.FromArgb(66, 143, 208) },
-        { "Faster Run", Color.FromArgb(128, 128, 128) },
+        { "Faster Run", Color.FromArgb(0, 165, 84) },
         { "Living Blood", Color.FromArgb(110, 37, 7) },
         { "Dazed", Color.FromArgb(112, 34, 151) },
-        { "Siphoning Ring", Color.FromArgb(128, 128, 128) },
-        { "Acceleration Shrine", Color.FromArgb(128, 128, 128) },
+        { "Siphoning Ring", Color.FromArgb(128, 128, 200) },
+        { "Acceleration Shrine", Color.FromArgb(0, 165, 84) },
         { "Hinder", Color.FromArgb(112, 34, 151) },
         { "Phasing Buff", Color.FromArgb(112, 34, 151) },
-}   ;
+        { "Gloom Shrine", Color.FromArgb(14, 134, 6) },
+        { "Replenishing Shrine", Color.FromArgb(99, 68, 21) },
+        { "Cannot Flee", Color.FromArgb(67, 43, 3) },
+        { "Rejuvenation", Color.FromArgb(112, 34, 151) },
+        { "Innervate", Color.FromArgb(14, 134, 6) },
+        { "Temporal Chains", Color.FromArgb(95, 131, 14) },
+        { "Time Stop", Color.FromArgb(14, 134, 6) },
+        { "Sniper's Mark", Color.FromArgb(110, 37, 7) },
+        { "Greed Shrine", Color.FromArgb(146, 149, 19) },
+        { "Immunity", Color.FromArgb(89, 6, 162) },
+        { "Enduring Shrine", Color.FromArgb(109, 15, 15) },
+        { "Fully Broken Armour", Color.FromArgb(138, 22, 22) },
+        { "Blood of the Bearer", Color.FromArgb(89, 6, 162) },
+        { "Vortex", Color.FromArgb(95, 131, 14) },
+        { "Frontal Proximity Shield", Color.FromArgb(99, 68, 21) },
+};
 
     /// <summary>
     /// Draws buffs underneath a given area. Multiple buffs with the same DisplayName are merged
@@ -693,119 +709,162 @@ public class HealthBars : BaseSettingsPlugin<HealthBarsSettings>
         const float verticalMargin = 2f;   // space between lines
         const float padding = 2f;          // padding inside each buff's box
 
-        float totalHeight = 0f;            // vertical offset for drawn lines
-        float currentLineHeight = 0f;      // maximum height of the current line
-        float currentX = area.X;           // current X position where the next buff will be drawn
-
         var shadowOffset = new Vector2(1, 1);
         var shadowColor = Color.Black;
 
+        float totalHeight = 0f;
         var alphaMulti = GetAlphaMulti(bar, area);
 
         // Get buffs with a non-empty DisplayName.
-        var buffs = bar.Entity.Buffs?
-            .Where(buff => !string.IsNullOrEmpty(buff.DisplayName))
-            .ToList();
-
+        var buffs = bar.Entity.Buffs?.Where(buff => !string.IsNullOrEmpty(buff.DisplayName)).ToList();
         if (buffs == null || buffs.Count == 0)
             return 0f;
 
         // Group buffs by DisplayName.
-        // For each group, count the number of occurrences and pick the maximum Timer value.
         var groupedBuffs = buffs
             .GroupBy(b => b.DisplayName)
             .Select(g => new
             {
-                DisplayName = g.Key,
+                // Save the base name (before adding stack count or timer).
+                BaseDisplayName = g.Key,
                 Count = g.Count(),
                 Timer = g.Max(b => b.Timer)
             })
-            .OrderBy(x => x.DisplayName)
             .ToList();
 
-        // The available width is the width of the provided area.
-        float availableWidth = area.Width;
-
-        // Loop through each unique buff.
-        foreach (var uniqueBuff in groupedBuffs)
+        // Create a list of buff cells (each representing a unique buff group).
+        var buffCells = groupedBuffs.Select(g =>
         {
-            // Build the display text:
-            // Start with the DisplayName.
-            string displayText = uniqueBuff.DisplayName;
-            // If more than one instance exists, append the stack count.
-            if (uniqueBuff.Count > 1)
-            {
-                displayText += " (" + uniqueBuff.Count.ToString() + ")";
-            }
-            // Append the timer if applicable.
-            if (uniqueBuff.Timer > 0 && uniqueBuff.Timer < 99)
-            {
-                displayText += $" {uniqueBuff.Timer:F1}s";
-            }
+            string baseText = g.BaseDisplayName;
+            // Build the display text by appending stack count and timer.
+            string displayText = baseText;
+            if (g.Count > 1)
+                displayText += " (" + g.Count.ToString() + ")";
+            if (g.Timer > 0 && g.Timer < 99)
+                displayText += $" {g.Timer:F1}s";
 
-            // Determine the background color via the lookup table.
-            // (Default to the plugin’s TextBackground if no keyword matches.)
-            Color bgColor = Color.DarkSlateGray;
-            bool foundMapping = false;
-            foreach (var kvp in BuffBackgroundColorLookup)
-            {
-                if (displayText.IndexOf(kvp.Key, StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    bgColor = kvp.Value;
-                    foundMapping = true;
-                    break;
-                }
-            }
-
-            // If no mapping was found and there are mappings defined, pick one deterministically.
-            if (!foundMapping && BuffBackgroundColorLookup.Count > 0)
-            {
-                // Predictably select a color based on the display text.
-                var colorList = BuffBackgroundColorLookup.Values.ToList();
-                int index = Math.Abs(displayText.GetHashCode()) % colorList.Count;
-                bgColor = colorList[index];
-            }
-
-            // Choose a contrasting text color (either white or black) based on the background brightness.
-            Color textColor = GetContrastingTextColor(bgColor);
-
-            // Measure the complete display text.
+            // Measure the text size and add padding.
             var textSize = Graphics.MeasureText(displayText);
             float boxWidth = textSize.X + 2 * padding;
             float boxHeight = textSize.Y + 2 * padding;
-
-            // If adding this buff would exceed the available width, wrap to the next line.
-            if (currentX - area.X + boxWidth > availableWidth)
+            return new BuffCell
             {
-                totalHeight += currentLineHeight + verticalMargin;
-                currentX = area.X;
-                currentLineHeight = 0f;
-            }
+                BaseDisplayText = baseText,
+                DisplayText = displayText,
+                BoxWidth = boxWidth,
+                BoxHeight = boxHeight,
+                TextSize = textSize
+            };
+        }).ToList();
 
-            // Define the box rectangle for this buff cell.
-            var boxRect = new RectangleF(currentX, area.Y + totalHeight, boxWidth, boxHeight);
-            Graphics.DrawBox(boxRect.TopLeft, boxRect.BottomRight, bgColor.MultiplyAlpha(alphaMulti));
+        // Pack the buff cells into lines using a greedy best-fit algorithm.
+        // First, sort the buff cells by width (largest first).
+        buffCells.Sort((a, b) => b.BoxWidth.CompareTo(a.BoxWidth));
 
-            // Draw the text inside the box.
-            var textPos = new Vector2(currentX + padding, area.Y + totalHeight + padding);
-            if (textColor != Color.Black)
+        List<List<BuffCell>> lines = new List<List<BuffCell>>();
+        foreach (var cell in buffCells)
+        {
+            double bestFitRemaining = double.MaxValue;
+            List<BuffCell> bestFitLine = null;
+            foreach (var line in lines)
             {
-                Graphics.DrawText(displayText, textPos + shadowOffset, shadowColor);
+                float usedWidth = line.Sum(x => x.BoxWidth) + (line.Count > 0 ? line.Count * horizontalMargin : 0);
+                float remaining = area.Width - usedWidth;
+                if (remaining >= cell.BoxWidth && remaining - cell.BoxWidth < bestFitRemaining)
+                {
+                    bestFitRemaining = remaining - cell.BoxWidth;
+                    bestFitLine = line;
+                }
             }
-            Graphics.DrawText(displayText, textPos, textColor.MultiplyAlpha(alphaMulti));
-
-            // Move currentX to the next position.
-            currentX += boxWidth + horizontalMargin;
-            // Update the current line height if necessary.
-            currentLineHeight = Math.Max(currentLineHeight, boxHeight);
+            if (bestFitLine != null)
+            {
+                bestFitLine.Add(cell);
+            }
+            else
+            {
+                lines.Add(new List<BuffCell> { cell });
+            }
         }
 
-        // Add the height of the last line.
-        totalHeight += currentLineHeight;
+        // Draw the buff cells line by line.
+        foreach (var line in lines)
+        {
+            // Sort cells in this line alphabetically by DisplayText.
+            line.Sort((a, b) => string.Compare(a.DisplayText, b.DisplayText, StringComparison.OrdinalIgnoreCase));
 
+            // Determine the height of this line (largest box height).
+            float lineHeight = line.Max(cell => cell.BoxHeight);
+            float currentX = area.X;
+            foreach (var cell in line)
+            {
+                // Determine the background color using the base buff name.
+                Color bgColor = Color.DarkSlateGray; // fallback default
+                bool found = false;
+                foreach (var kvp in BuffBackgroundColorLookup)
+                {
+                    if (cell.BaseDisplayText.IndexOf(kvp.Key, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        bgColor = kvp.Value;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    // If no explicit match, use a stable hash of the base name to pick one predictably.
+                    var colorList = BuffBackgroundColorLookup.Values.ToList();
+                    int index = Math.Abs(GetStableHash(cell.BaseDisplayText)) % colorList.Count;
+                    bgColor = colorList[index];
+                }
+
+                // Choose a contrasting text color.
+                Color textColor = GetContrastingTextColor(bgColor);
+
+                // Define the rectangle for this buff cell.
+                var boxRect = new RectangleF(currentX, area.Y + totalHeight, cell.BoxWidth, cell.BoxHeight);
+                Graphics.DrawBox(boxRect.TopLeft, boxRect.BottomRight, bgColor.MultiplyAlpha(alphaMulti));
+                // Draw the text inside the box.
+                var textPos = new Vector2(currentX + padding, area.Y + totalHeight + padding);
+                if (textColor != Color.Black)
+                {
+                    Graphics.DrawText(cell.DisplayText, textPos + shadowOffset, shadowColor);
+                }
+                Graphics.DrawText(cell.DisplayText, textPos, textColor.MultiplyAlpha(alphaMulti));
+
+                currentX += cell.BoxWidth + horizontalMargin;
+            }
+            totalHeight += lineHeight + verticalMargin;
+        }
+        if (totalHeight > 0)
+            totalHeight -= verticalMargin;
         return totalHeight;
     }
 
+    // A helper class to represent each buff cell.
+    private class BuffCell
+    {
+        // The original buff name (used for color lookup).
+        public string BaseDisplayText { get; set; }
+        // The full display text (base name with appended stack count and timer).
+        public string DisplayText { get; set; }
+        public float BoxWidth { get; set; }
+        public float BoxHeight { get; set; }
+        public Vector2 TextSize { get; set; }
+    }
+
+    // A stable hash function so that the same string always produces the same hash across runs.
+    private static int GetStableHash(string s)
+    {
+        unchecked
+        {
+            int hash = 17;
+            foreach (char c in s)
+            {
+                hash = hash * 31 + c;
+            }
+            return hash;
+        }
+    }
 
     private void ShowHealthbarText(HealthBar bar, string text, float alphaMulti, RectangleF area)
     {
